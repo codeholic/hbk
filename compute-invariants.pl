@@ -72,8 +72,6 @@ sub compute_invariants {
     my $dt = $g2->[2] - $g1->[2];
 
     my $hd = $dx - $dy;
-    return if $hd % 2;
-
     my $tr = $hd / 2 * 47;
 
     return abs($dt - 4 * $dy - $tr), abs(4 * $dx - $dt - $tr);
