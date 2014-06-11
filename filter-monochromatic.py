@@ -27,9 +27,12 @@ for line in infile:
   pattern = re.split('\s', line, 2)[0]
   pattern = re.sub('!', '.\n', pattern)
 
+  cells = g.parse(pattern)
+
   gliders = []
   for gen in range(0, 4):
-    gliders.extend(find_all_gliders(g.parse(pattern)))
+    gliders.extend(find_all_gliders(cells))
+    cells = g.evolve(cells, 1)
 
   if len(gliders) < 2:
     continue
