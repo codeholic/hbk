@@ -20,11 +20,11 @@ def find_all_subpatterns(haystack, needle):
       needle_lookup.add((xrel, yrel))
       if xrel < xmin:
         xmin = xrel
-      if xrel > xmax:
+      elif xrel > xmax:
         xmax = xrel
       if yrel < ymin:
         ymin = yrel
-      if yrel > xmax:
+      elif yrel > xmax:
         ymax = yrel
 
     spot = product(range(xmin-1, xmax+2), range(ymin-1, ymax+2))
@@ -33,57 +33,85 @@ def find_all_subpatterns(haystack, needle):
 
   return found_needles
 
-TARGETS = dict([
-  (3, [
-    g.parse('3o$!'), # blinker
-  ]),
-  (4, [
-    g.parse('2o$2o!'), # block
-    g.parse('bo$obo$bo!'), # tub
-  ]),
-  (5, [
-    g.parse('b2o$obo$bo!'), # boat
-  ]),
-  (6, [
-    g.parse('b2o$o2bo$b2o!'), # hive
-    g.parse('b2o$obo$2o!'), # ship
-  ]),
-  (7, [
-    g.parse('b2o$o2bo$bobo$2bo!'), # loaf
-    g.parse('2b2o$bobo$obo$bo!'), # long boat
-  ]),
-  (8, [
-    g.parse('b2o$o2bo$o2bo$b2o!'), # pond
-  ]),
-  (12, [
-    g.parse('2b3o2$o5bo$o5bo$o5bo2$2b3o!'), # traffic light
-  ]),
-  (24, [
-    g.parse('6bo$5bobo$5bobo$6bo2$b2o7b2o$o2bo5bo2bo$b2o7b2o2$6bo$5bobo$5bobo$6bo!'), # honey farm
-  ]),
-])
+TARGET_PATTERNS = [
+  ('3o$!', 4), # blinker
+  ('2o$2o!', 4), # block
+  ('bo$obo$bo!', 4), # tub
+  ('b2o$obo$bo!', 1), # boat
+  ('b2o$o2bo$b2o!', 2), # hive
+  ('b2o$obo$2o!', 2), # ship
+  ('b2o$o2bo$bobo$2bo!', 1), # loaf
+  ('2b2o$bobo$obo$bo!', 1), # long boat
+  ('b2o$o2bo$o2bo$b2o!', 4), # pond
+  ('4bo$4bo$4bo2$3o3b3o2$4bo$4bo$4bo!', 4), # traffic light
+  ('6bo$5bobo$5bobo$6bo2$b2o7b2o$o2bo5bo2bo$b2o7b2o2$6bo$5bobo$5bobo$6bo!', 4), # honey farm
+]
+
+GLIDER = g.parse('3o$2bo$bo!')
 
 MAX_POPULATION = 50
 MAX_WEIGHT = 5
+MAX_GLIDERS_PER_SCAN = 10
+LANES = range(-38, 38, 2)
 
-def get_pattern_variants(cells):
+def get_pattern_bounding_box(cells):
+  xmin, ymin, xmax, ymax = cells[0], cells[1], cells[0], cells[1]
+  for x in cells[::2]:
+    if x < xmin:
+      xmin = x
+    elif x > xmax:
+      xmax = x
+  for y in cells[1::2]:
+    if y < ymin:
+      ymin = y
+    elif y > ymax:
+      ymax = y
+  return xmin, ymin, xmax, ymax
+
+def center_pattern(cells):
+  xmin, ymin, xmax, ymax = get_pattern_bounding_box(cells)
+  return list(chain(*[(x - xmin, y - ymin) for x, y in zip(cells[::2], cells[1::2])]))
+
+def get_pattern_variants(cells, symmetry):
   variants = []
-  for p in range(0, 2):
-    for t in range(0, 4):
-      if all([len(find_all_subpatterns(p, cells)) == 0 for p in variants]):
-        variants.append(cells)
-      cells = g.transform(cells, 0, 0, 0, -1, 1, 0)
-    cells = g.evolve(cells, 1)
+  for t in range(0, 4, symmetry):
+    variants.append(center_pattern(cells))
+    cells = g.transform(cells, 0, 0, 0, -1, 1, 0)
   return variants
 
-def get_start_targets():
-  ret = []
-  for t in chain(*TARGETS.values()):
-    ret.extend(chain(*[(v, g.transform(v, 1, 0)) for v in get_pattern_variants(t)]))
-  return ret
+TARGETS = chain(*[get_pattern_variants(g.parse(pattern), symmetry) for pattern, symmetry in TARGET_PATTERNS])
+
+def patterns_identical(cells1, cells2):
+  if len(cells1) != len(cells2):
+    return False
+  return set(zip(cells1[::2], cells1[1::2])) == set(zip(cells2[::2], cells2[1::2]))
+
+def get_pattern_period(cells):
+  temp_cells = cells
+  for p in range(0, 2):
+    temp_cells = evolve(temp_cells, 1)
+    if patterns_identical(cells, temp_cells):
+      return p+1
+  return None
+
+def get_lanes_to_try(cells):
+  xmin, ymin, xmax, ymax = get_pattern_bounding_box(cells)
+  minlane, maxlane = xmin + ymin - 6, ymin + ymax + 3
+  return filter(lambda(lane): minlane <= lane <= maxlane, LANES)
+
+def get_pattern_to_try(cells, lane, parity):
+  glider = g.transform(GLIDER, lane - 25, 25)
+  if parity % 2:
+    glider = g.evolve(glider, 1)
+  return list(chain(cells, glider))
 
 g.new('')
 i = 0
-for p in get_start_targets():
-  g.putcells(p, i, 0)
+#for p in TARGETS:
+#  g.putcells(p, i, 0)
+#  i += 50
+
+cells = list(TARGETS)[1]
+for lane in get_lanes_to_try(cells):
+  g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
   i += 50
