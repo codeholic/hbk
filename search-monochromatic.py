@@ -96,7 +96,7 @@ def get_pattern_period(cells):
 
 def get_lanes_to_try(cells):
   xmin, ymin, xmax, ymax = get_pattern_bounding_box(cells)
-  minlane, maxlane = xmin + ymin - 6, ymin + ymax + 3
+  minlane, maxlane = xmin + ymin - 6, xmax + ymax + 3
   return filter(lambda(lane): minlane <= lane <= maxlane, LANES)
 
 def get_pattern_to_try(cells, lane, parity):
@@ -111,7 +111,7 @@ i = 0
 #  g.putcells(p, i, 0)
 #  i += 50
 
-cells = list(TARGETS)[1]
+cells = list(TARGETS)[-1]
 for lane in get_lanes_to_try(cells):
   g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
   i += 50
