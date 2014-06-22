@@ -49,6 +49,7 @@ TARGET_PATTERNS = [
 
 GLIDER = g.parse('3o$2bo$bo!')
 
+MAX_GENERATIONS = 400
 MAX_POPULATION = 50
 MAX_WEIGHT = 5
 MAX_GLIDERS_PER_SCAN = 10
@@ -79,12 +80,12 @@ def get_pattern_variants(cells, symmetry):
     cells = g.transform(cells, 0, 0, 0, -1, 1, 0)
   return variants
 
-TARGETS = dict()
+TARGETS = []
 for name, pattern, symmetry in TARGET_PATTERNS:
   cells = g.parse(pattern)
   variants = get_pattern_variants(cells, symmetry)
   p = len(cells) / 2
-  TARGETS.setdefault(p, {}).update(dict([(name + str(i), cells) for i, cells in zip(range(0, len(variants)), variants)]))
+  TARGETS.extend([(name + str(i), cells, p) for i, cells in zip(range(0, len(variants)), variants)])
 
 def patterns_identical(cells1, cells2):
   if len(cells1) != len(cells2):
@@ -112,11 +113,7 @@ def get_pattern_to_try(cells, lane, parity):
 
 g.new('')
 i = 0
-#for p in TARGETS:
-#  g.putcells(p, i, 0)
-#  i += 50
-
-cells = TARGETS[24]['hfarm0']
+cells = [c for name, c, _ in TARGETS if name == 'hfarm0'][0]
 for lane in get_lanes_to_try(cells):
   g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
   i += 50
