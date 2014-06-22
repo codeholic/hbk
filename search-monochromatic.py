@@ -34,17 +34,17 @@ def find_all_subpatterns(haystack, needle):
   return found_needles
 
 TARGET_PATTERNS = [
-  ('3o$!', 4), # blinker
-  ('2o$2o!', 4), # block
-  ('bo$obo$bo!', 4), # tub
-  ('b2o$obo$bo!', 1), # boat
-  ('b2o$o2bo$b2o!', 2), # hive
-  ('b2o$obo$2o!', 2), # ship
-  ('b2o$o2bo$bobo$2bo!', 1), # loaf
-  ('2b2o$bobo$obo$bo!', 1), # long boat
-  ('b2o$o2bo$o2bo$b2o!', 4), # pond
-  ('4bo$4bo$4bo2$3o3b3o2$4bo$4bo$4bo!', 4), # traffic light
-  ('6bo$5bobo$5bobo$6bo2$b2o7b2o$o2bo5bo2bo$b2o7b2o2$6bo$5bobo$5bobo$6bo!', 4), # honey farm
+  ('blinker', '3o$!', 4),
+  ('block', '2o$2o!', 4),
+  ('tub', 'bo$obo$bo!', 4),
+  ('boat', 'b2o$obo$bo!', 1),
+  ('hive', 'b2o$o2bo$b2o!', 2),
+  ('ship', 'b2o$obo$2o!', 2),
+  ('loaf', 'b2o$o2bo$bobo$2bo!', 1),
+  ('lboat', '2b2o$bobo$obo$bo!', 1),
+  ('pond', 'b2o$o2bo$o2bo$b2o!', 4),
+  ('tlight', '4bo$4bo$4bo2$3o3b3o2$4bo$4bo$4bo!', 4),
+  ('hfarm', '6bo$5bobo$5bobo$6bo2$b2o7b2o$o2bo5bo2bo$b2o7b2o2$6bo$5bobo$5bobo$6bo!', 4),
 ]
 
 GLIDER = g.parse('3o$2bo$bo!')
@@ -79,7 +79,12 @@ def get_pattern_variants(cells, symmetry):
     cells = g.transform(cells, 0, 0, 0, -1, 1, 0)
   return variants
 
-TARGETS = chain(*[get_pattern_variants(g.parse(pattern), symmetry) for pattern, symmetry in TARGET_PATTERNS])
+TARGETS = dict()
+for name, pattern, symmetry in TARGET_PATTERNS:
+  cells = g.parse(pattern)
+  variants = get_pattern_variants(cells, symmetry)
+  p = len(cells) / 2
+  TARGETS.setdefault(p, {}).update(dict([(name + str(i), cells) for i, cells in zip(range(0, len(variants)), variants)]))
 
 def patterns_identical(cells1, cells2):
   if len(cells1) != len(cells2):
@@ -111,7 +116,7 @@ i = 0
 #  g.putcells(p, i, 0)
 #  i += 50
 
-cells = list(TARGETS)[-1]
+cells = TARGETS[24]['hfarm0']
 for lane in get_lanes_to_try(cells):
   g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
   i += 50
