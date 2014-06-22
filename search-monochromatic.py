@@ -127,17 +127,19 @@ g.new('')
 def display_solution(start, lanes):
   name, x, y = start
   cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
-  i = 50
+  i = 100
   for lane in lanes:
     lane_num, parity = lane
     cells = get_pattern_to_try(cells, lane_num, parity, i)
-    i += 50
+    i += 100
   g.new('')
   g.putcells(cells)
   g.fit()
   g.update()
+  g.show('Press any key')
   while g.getkey() == '':
     pass
+  g.show('')
 
 queue = []
 for name, cells, _ in TARGETS:
