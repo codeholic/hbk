@@ -24,7 +24,7 @@ def find_all_subpatterns(haystack, needle):
         xmax = xrel
       if yrel < ymin:
         ymin = yrel
-      elif yrel > xmax:
+      elif yrel > ymax:
         ymax = yrel
 
     spot = product(range(xmin-1, xmax+2), range(ymin-1, ymax+2))
@@ -151,18 +151,18 @@ while len(queue):
   if lanes:
     pop = len(last) / 2
     candidates = [(name, c) for name, c, p in TARGETS if p == pop]
+    found = False
     for name, c in candidates:
       for gen in range(0, period):
         needles = find_all_subpatterns(last, c)
         if needles:
           if emitted:
             display_solution(start, lanes)
+          found = True
           break
-        continue
-      else:
+      if found:
         break
-      continue
-    else:
+    if found:
       continue
 
   if len(lanes) >= MAX_GLIDERS:
