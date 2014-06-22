@@ -2,7 +2,7 @@ import golly as g
 from itertools import chain, product
 
 def find_all_subpatterns(haystack, needle):
-  if len(haystack) == 0 or len(needle) == 0:
+  if not haystack or not needle:
     return []
 
   haystack = zip(haystack[::2], haystack[1::2])
@@ -52,7 +52,7 @@ GLIDER = g.parse('3o$2bo$bo!')
 MAX_GENERATIONS = 400
 MAX_POPULATION = 50
 MAX_WEIGHT = 5
-MAX_GLIDERS_PER_SCAN = 10
+MAX_GLIDERS = 10
 LANES = range(-38, 38, 2)
 
 def get_pattern_bounding_box(cells):
@@ -95,7 +95,7 @@ def patterns_identical(cells1, cells2):
 def get_pattern_period(cells):
   temp_cells = cells
   for p in range(0, 2):
-    temp_cells = evolve(temp_cells, 1)
+    temp_cells = g.evolve(temp_cells, 1)
     if patterns_identical(cells, temp_cells):
       return p+1
   return None
@@ -105,15 +105,125 @@ def get_lanes_to_try(cells):
   minlane, maxlane = xmin + ymin - 6, xmax + ymax + 3
   return filter(lambda(lane): minlane <= lane <= maxlane, LANES)
 
-def get_pattern_to_try(cells, lane, parity):
-  glider = g.transform(GLIDER, lane - 25, 25)
+def get_pattern_to_try(cells, lane, parity, offset=25):
+  glider = g.transform(GLIDER, lane - offset, offset)
   if parity % 2:
     glider = g.evolve(glider, 1)
   return list(chain(cells, glider))
 
+def subtract(cells, sub):
+  return list(chain(*(set(zip(cells[::2], cells[1::2])) ^ set(zip(sub[::2], sub[1::2])))))
+
 g.new('')
-i = 0
-cells = [c for name, c, _ in TARGETS if name == 'hfarm0'][0]
-for lane in get_lanes_to_try(cells):
-  g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
-  i += 50
+#i = 0
+#cells = [c for name, c, _ in TARGETS if name == 'hfarm0'][0]
+#for lane in get_lanes_to_try(cells):
+#  g.putcells(get_pattern_to_try(cells, lane, 0), i, 0)
+#  i += 50
+
+# start, lanes, last, period, weight, emitted = item
+# name, x, y = start
+
+def display_solution(start, lanes):
+  name, x, y = start
+  cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
+  i = 50
+  for lane in lanes:
+    lane_num, parity = lane
+    cells = get_pattern_to_try(cells, lane_num, parity, i)
+    i += 50
+  g.new('')
+  g.putcells(cells)
+  g.fit()
+  g.update()
+  while g.getkey() == '':
+    pass
+
+queue = []
+for name, cells, _ in TARGETS:
+  period = get_pattern_period(cells)
+  queue.append( ((name, 0, 0), [], cells, period, 0, False) )
+  queue.append( ((name, 1, 0), [], g.transform(cells, 1, 0), period, 0, False) )
+
+while len(queue):
+  start, lanes, last, period, weight, emitted = queue.pop(0)
+
+  if lanes:
+    pop = len(last) / 2
+    candidates = [(name, c) for name, c, p in TARGETS if p == pop]
+    for name, c in candidates:
+      for gen in range(0, period):
+        needles = find_all_subpatterns(last, c)
+        if needles:
+          if emitted:
+            display_solution(start, lanes)
+          break
+        continue
+      else:
+        break
+      continue
+    else:
+      continue
+
+  if len(lanes) >= MAX_GLIDERS:
+    continue
+
+  last_lane = lanes[-1] if len(lanes) else (-40, 0) # TODO: start with other parity
+  for lane_num in get_lanes_to_try(last):
+    new_weight = weight
+    parities = [last_lane[1]] if period == 1 else [last_lane[1], last_lane[1]+1]
+    for parity in parities:
+      if period == 2 and lane_num > last_lane[0]:
+        if (lane_num - last_lane[0]) / 2 % 2 != parity - last_lane[1]:
+          new_weight += 1
+      else:
+        if period == 2 and (lane_num - last_lane[0]) / 2 % 2 == parity - last_lane[1]:
+          new_weight += 2
+        else:
+          new_weight += 1
+
+      if new_weight > MAX_WEIGHT:
+        continue
+
+      lane = (lane_num, parity)
+      new_cells = get_pattern_to_try(last, lane[0], lane[1])
+      temp_cells = list(new_cells)
+      new_cells = g.evolve(new_cells, MAX_GENERATIONS)
+      if len(new_cells) > MAX_POPULATION:
+        continue
+
+      emitted_gliders = [0, 0, 0, 0]
+      for gen in range(0, 4):
+        for t in range(0, 4):
+          for e in find_all_subpatterns(new_cells, GLIDER):
+            new_cells = subtract(new_cells, e)
+            emitted_gliders[t] += 1
+          new_cells = g.transform(new_cells, 0, 0, 0, -1, 1, 0)
+        new_cells = g.evolve(new_cells, 1)
+
+      if not new_cells:
+        continue
+
+      if emitted_gliders[0] + emitted_gliders[2] > 0:
+        continue
+
+      new_emitted = None
+      if emitted_gliders[1] + emitted_gliders[3] == 0:
+        new_emitted = emitted
+      elif emitted_gliders[1] + emitted_gliders[3] == 1:
+        if emitted:
+          continue
+        else:
+          new_emitted = True
+      else:
+        continue
+
+      new_period = get_pattern_period(new_cells)
+      if new_period is None:
+        continue
+
+      new_lanes = list(lanes)
+      new_lanes.append(lane)
+      queue.append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted) )
+
+  queue.sort(lambda a, b: cmp(a[4], b[4]))
