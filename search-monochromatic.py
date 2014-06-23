@@ -173,7 +173,7 @@ while len(queue):
   last_lane = lanes[-1] if len(lanes) else (-40, 0) # TODO: start with other parity
   for lane_num in get_lanes_to_try(last):
     new_weight = weight
-    parities = [last_lane[1]] if period == 1 else [last_lane[1], last_lane[1]+1]
+    parities = [(lane_num - last_lane[1]) / 2 % 2] if period == 1 else [last_lane[1], last_lane[1]+1]
     for parity in parities:
       if lane_num > last_lane[0]:
         if period == 2 and (lane_num - last_lane[0]) / 2 % 2 != parity - last_lane[1]:
