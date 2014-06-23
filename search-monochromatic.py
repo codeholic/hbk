@@ -138,7 +138,7 @@ def display_solution(start, lanes, debug):
     g.putcells(p, 100 + 100 * i, 0)
   g.fit()
   g.update()
-  g.show(' '.join(chain(str(start), [str(lane) for lane in lanes])))
+  g.show(' '.join(chain([str(start)], [str(lane) for lane in lanes])))
   while g.getkey() == '':
     pass
   g.show('')
