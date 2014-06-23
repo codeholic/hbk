@@ -105,7 +105,7 @@ def get_lanes_to_try(cells):
   minlane, maxlane = xmin + ymin - 6, xmax + ymax + 3
   return filter(lambda(lane): minlane <= lane <= maxlane, LANES)
 
-def get_pattern_to_try(cells, lane, parity, offset=25):
+def get_pattern_to_try(cells, lane, parity, offset=50):
   glider = g.transform(GLIDER, lane - offset, offset)
   if parity % 2:
     glider = g.evolve(glider, 1)
@@ -124,7 +124,7 @@ g.new('')
 # start, lanes, last, period, weight, emitted = item
 # name, x, y = start
 
-def display_solution(start, lanes):
+def display_solution(start, lanes, debug):
   name, x, y = start
   cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
   i = 100
@@ -134,9 +134,11 @@ def display_solution(start, lanes):
     i += 100
   g.new('')
   g.putcells(cells)
+  for p, i in zip(debug, range(0, len(debug))):
+    g.putcells(p, 100 + 100 * i, 0)
   g.fit()
   g.update()
-  g.show('Press any key')
+  g.show(' '.join(chain(str(start), [str(lane) for lane in lanes])))
   while g.getkey() == '':
     pass
   g.show('')
@@ -144,11 +146,11 @@ def display_solution(start, lanes):
 queue = []
 for name, cells, _ in TARGETS:
   period = get_pattern_period(cells)
-  queue.append( ((name, 0, 0), [], cells, period, 0, False) )
-  queue.append( ((name, 1, 0), [], g.transform(cells, 1, 0), period, 0, False) )
+  queue.append( ((name, 0, 0), [], cells, period, 0, False, []) )
+  queue.append( ((name, 1, 0), [], g.transform(cells, 1, 0), period, 0, False, []) )
 
 while len(queue):
-  start, lanes, last, period, weight, emitted = queue.pop(0)
+  start, lanes, last, period, weight, emitted, debug = queue.pop(0)
 
   if lanes:
     pop = len(last) / 2
@@ -159,7 +161,7 @@ while len(queue):
         needles = find_all_subpatterns(last, c)
         if needles:
           if emitted:
-            display_solution(start, lanes)
+            display_solution(start, lanes, debug)
           found = True
           break
       if found:
@@ -189,7 +191,8 @@ while len(queue):
 
       lane = (lane_num, parity)
       new_cells = get_pattern_to_try(last, lane[0], lane[1])
-      temp_cells = list(new_cells)
+      new_debug = list(debug)
+      new_debug.append(new_cells)
       new_cells = g.evolve(new_cells, MAX_GENERATIONS)
       if len(new_cells) > MAX_POPULATION:
         continue
@@ -226,6 +229,6 @@ while len(queue):
 
       new_lanes = list(lanes)
       new_lanes.append(lane)
-      queue.append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted) )
+      queue.append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted, new_debug) )
 
   queue.sort(lambda a, b: cmp(a[4], b[4]))
