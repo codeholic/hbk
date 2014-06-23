@@ -157,13 +157,15 @@ while len(queue):
     candidates = [(name, c) for name, c, p in TARGETS if p == pop]
     found = False
     for name, c in candidates:
+      temp = list(last)
       for gen in range(0, period):
-        needles = find_all_subpatterns(last, c)
+        needles = find_all_subpatterns(temp, c)
         if needles:
           if emitted:
             display_solution(start, lanes, weight, debug)
           found = True
           break
+        temp = g.evolve(temp, 1)
       if found:
         break
     if found:
