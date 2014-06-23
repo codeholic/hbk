@@ -124,7 +124,7 @@ g.new('')
 # start, lanes, last, period, weight, emitted = item
 # name, x, y = start
 
-def display_solution(start, lanes, debug):
+def display_solution(start, lanes, weight, debug):
   name, x, y = start
   cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
   i = 100
@@ -138,7 +138,7 @@ def display_solution(start, lanes, debug):
     g.putcells(p, 100 + 100 * i, 0)
   g.fit()
   g.update()
-  g.show(' '.join(chain([str(start)], [str(lane) for lane in lanes])))
+  g.show(' '.join(chain([str(weight), str(start)], [str(lane) for lane in lanes])))
   while g.getkey() == '':
     pass
   g.show('')
@@ -161,7 +161,7 @@ while len(queue):
         needles = find_all_subpatterns(last, c)
         if needles:
           if emitted:
-            display_solution(start, lanes, debug)
+            display_solution(start, lanes, weight, debug)
           found = True
           break
       if found:
@@ -175,7 +175,7 @@ while len(queue):
   last_lane = lanes[-1] if len(lanes) else (-40, 0) # TODO: start with other parity
   for lane_num in get_lanes_to_try(last):
     new_weight = weight
-    parities = [(lane_num - last_lane[1]) / 2 % 2] if period == 1 else [last_lane[1], last_lane[1]+1]
+    parities = [weight + lane_num / 2 % 2] if period == 1 else [last_lane[1], last_lane[1]+1]
     for parity in parities:
       if lane_num > last_lane[0]:
         if period == 2 and (lane_num - last_lane[0]) / 2 % 2 != parity - last_lane[1]:
