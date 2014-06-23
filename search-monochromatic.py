@@ -175,8 +175,8 @@ while len(queue):
     new_weight = weight
     parities = [last_lane[1]] if period == 1 else [last_lane[1], last_lane[1]+1]
     for parity in parities:
-      if period == 2 and lane_num > last_lane[0]:
-        if (lane_num - last_lane[0]) / 2 % 2 != parity - last_lane[1]:
+      if lane_num > last_lane[0]:
+        if period == 2 and (lane_num - last_lane[0]) / 2 % 2 != parity - last_lane[1]:
           new_weight += 1
       else:
         if period == 2 and (lane_num - last_lane[0]) / 2 % 2 == parity - last_lane[1]:
