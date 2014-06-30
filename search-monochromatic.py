@@ -1,5 +1,6 @@
 import golly as g
 from itertools import chain, product
+import re
 
 def find_all_subpatterns(haystack, needle):
   if not haystack or not needle:
@@ -51,7 +52,7 @@ GLIDER = g.parse('3o$2bo$bo!')
 
 MAX_GENERATIONS = 400
 MAX_POPULATION = 50
-MAX_WEIGHT = 5
+MAX_WEIGHT = 1
 MAX_GLIDERS = 10
 LANES = range(-38, 38, 2)
 
@@ -87,6 +88,8 @@ for name, pattern, symmetry in TARGET_PATTERNS:
   p = len(cells) / 2
   TARGETS.extend([(name + str(i), cells, p) for i, cells in zip(range(0, len(variants)), variants)])
 
+#TARGETS = [t for t in TARGETS if t[0] == 'hive1']
+
 def patterns_identical(cells1, cells2):
   if len(cells1) != len(cells2):
     return False
@@ -114,6 +117,7 @@ def get_pattern_to_try(cells, lane, parity, offset=50):
 def subtract(cells, sub):
   return list(chain(*(set(zip(cells[::2], cells[1::2])) ^ set(zip(sub[::2], sub[1::2])))))
 
+g.setrule('Life')
 g.new('')
 #i = 0
 #cells = [c for name, c, _ in TARGETS if name == 'hfarm0'][0]
@@ -124,7 +128,11 @@ g.new('')
 # start, lanes, last, period, weight, emitted = item
 # name, x, y = start
 
+outf = open('/Users/ifomichev/work/hbk/reflectors.txt', 'w', 0)
+num_found = 0
+
 def display_solution(start, lanes, weight, debug):
+  global num_found
   name, x, y = start
   cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
   i = 100
@@ -132,16 +140,32 @@ def display_solution(start, lanes, weight, debug):
     lane_num, parity = lane
     cells = get_pattern_to_try(cells, lane_num, parity, i)
     i += 100
+
   g.new('')
   g.putcells(cells)
+  num_found = num_found + 1
+  g.save('/Users/ifomichev/work/hbk/temp' + str(num_found) + '.rle', 'rle')
+  #tempf = open(tempfile, 'r')
+  #outf.write(tempf.readlines())
+  #tempf.close()
+  
+  g.setrule('LifeHistory')
   for p, i in zip(debug, range(0, len(debug))):
-    g.putcells(p, 100 + 100 * i, 0)
+    c = []
+    for x, y in zip(p[::2], p[1::2]):
+      c.extend([x, y, 3])
+    if len(c) % 2 == 0:
+      c.append(0)
+    g.putcells(c, 100 + 100 * i, 0)
+    g.run(400)
   g.fit()
   g.update()
   g.show(' '.join(chain([str(weight), str(start)], [str(lane) for lane in lanes])))
-  while g.getkey() == '':
-    pass
+  #while g.getkey() == '':
+  #  pass
   g.show('')
+  g.setrule('Life')
+  g.new('')
 
 queue = []
 for name, cells, _ in TARGETS:
@@ -152,7 +176,10 @@ for name, cells, _ in TARGETS:
 while len(queue):
   start, lanes, last, period, weight, emitted, debug = queue.pop(0)
 
-  if lanes:
+  if emitted:
+    display_solution(start, lanes, weight, debug)
+    continue
+  elif lanes:
     pop = len(last) / 2
     candidates = [(name, c) for name, c, p in TARGETS if p == pop]
     found = False
@@ -161,8 +188,8 @@ while len(queue):
       for gen in range(0, period):
         needles = find_all_subpatterns(temp, c)
         if needles:
-          if emitted:
-            display_solution(start, lanes, weight, debug)
+          #if emitted:
+          #  display_solution(start, lanes, weight, debug)
           found = True
           break
         temp = g.evolve(temp, 1)
@@ -211,6 +238,7 @@ while len(queue):
       if not new_cells:
         continue
 
+      '''
       if emitted_gliders[0] + emitted_gliders[2] > 0:
         continue
 
@@ -218,6 +246,21 @@ while len(queue):
       if emitted_gliders[1] + emitted_gliders[3] == 0:
         new_emitted = emitted
       elif emitted_gliders[1] + emitted_gliders[3] == 1:
+        if emitted:
+          continue
+        else:
+          new_emitted = True
+      else:
+        continue
+      '''
+
+      if emitted_gliders[0] + emitted_gliders[1] + emitted_gliders[3] > 0:
+        continue
+
+      new_emitted = None
+      if emitted_gliders[2] == 0:
+        new_emitted = emitted
+      elif emitted_gliders[2] == 1:
         if emitted:
           continue
         else:
@@ -234,3 +277,5 @@ while len(queue):
       queue.append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted, new_debug) )
 
   queue.sort(lambda a, b: cmp(a[4], b[4]))
+
+outf.close
