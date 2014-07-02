@@ -1,4 +1,5 @@
-#CXRLE Pos=-284,0
-x = 294, y = 302, rule = Life
-289bo$289bo$289bo2$285b3o3b3o2$289bo$289bo$289bo92$184b3o$186bo$185bo
-98$92b3o$94bo$93bo97$bo$b2o$obo!
+#CXRLE Pos=-576,0
+x = 586, y = 603, rule = Life
+581bo$581bo$581bo2$577b3o3b3o2$581bo$581bo$581bo92$476b3o$478bo$477bo
+98$384b3o$386bo$385bo98$274b3o$276bo$275bo98$186b3o$188bo$187bo98$84b
+3o$86bo$85bo98$3o$2bo$bo!

@@ -52,7 +52,7 @@ GLIDER = g.parse('3o$2bo$bo!')
 
 MAX_GENERATIONS = 400
 MAX_POPULATION = 50
-MAX_WEIGHT = 1
+MAX_WEIGHT = 3
 MAX_GLIDERS = 10
 LANES = range(-38, 38, 2)
 
@@ -131,7 +131,7 @@ g.new('')
 outf = open('/Users/ifomichev/work/hbk/reflectors.txt', 'w', 0)
 num_found = 0
 
-def display_solution(start, lanes, weight, debug):
+def display_solution(start, lanes, weight, debug, emitted):
   global num_found
   name, x, y = start
   cells = g.transform([c for n, c, _ in TARGETS if n == name][0], x, y)
@@ -160,7 +160,7 @@ def display_solution(start, lanes, weight, debug):
     g.run(400)
   g.fit()
   g.update()
-  g.show(' '.join(chain([str(weight), str(start)], [str(lane) for lane in lanes])))
+  g.show(' '.join(chain([str(weight), str(start)], [str(lane) for lane in lanes])) + str(emitted))
   #while g.getkey() == '':
   #  pass
   g.show('')
@@ -177,7 +177,8 @@ while len(queue):
   start, lanes, last, period, weight, emitted, debug = queue.pop(0)
 
   if emitted:
-    display_solution(start, lanes, weight, debug)
+    if emitted > max([lane for lane, _ in lanes])+6:
+      display_solution(start, lanes, weight, debug, emitted)
     continue
   elif lanes:
     pop = len(last) / 2
@@ -226,13 +227,20 @@ while len(queue):
       if len(new_cells) > MAX_POPULATION:
         continue
 
-      emitted_gliders = [0, 0, 0, 0]
+      emitted_gliders = [[], [], [], []]
+      glider_copy = GLIDER
       for gen in range(0, 4):
         for t in range(0, 4):
-          for e in find_all_subpatterns(new_cells, GLIDER):
+          for e in find_all_subpatterns(new_cells, glider_copy):
             new_cells = subtract(new_cells, e)
-            emitted_gliders[t] += 1
-          new_cells = g.transform(new_cells, 0, 0, 0, -1, 1, 0)
+            (ex, ey, _, _) = get_pattern_bounding_box(e)
+            #if t == 2:
+            #  g.new('')
+            #  g.setrule('Life')
+            #  g.putcells(new_cells)
+            #  g.exit(' '.join([str(i) for i in (ex, ey, ex+ey)]))
+            emitted_gliders[t].append(ex + ey)
+          glider_copy = g.transform(glider_copy, 0, 0, 0, -1, 1, 0)
         new_cells = g.evolve(new_cells, 1)
 
       if not new_cells:
@@ -254,17 +262,17 @@ while len(queue):
         continue
       '''
 
-      if emitted_gliders[0] + emitted_gliders[1] + emitted_gliders[3] > 0:
+      if len(emitted_gliders[0]) + len(emitted_gliders[1]) + len(emitted_gliders[3]) > 0:
         continue
 
       new_emitted = None
-      if emitted_gliders[2] == 0:
+      if len(emitted_gliders[2]) == 0:
         new_emitted = emitted
-      elif emitted_gliders[2] == 1:
+      elif len(emitted_gliders[2]) == 1:
         if emitted:
           continue
         else:
-          new_emitted = True
+          new_emitted = emitted_gliders[2][0]
       else:
         continue
 
