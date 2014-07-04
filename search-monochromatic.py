@@ -53,7 +53,7 @@ MAX_GENERATIONS = 400
 MAX_POPULATION = 50
 MAX_WEIGHT = 5
 MAX_GLIDERS = 10
-LANES = range(-38, 38, 2)
+LANES = range(-38, 40, 2)
 
 def get_pattern_bounding_box(cells):
   xmin, ymin, xmax, ymax = cells[0], cells[1], cells[0], cells[1]
