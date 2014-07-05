@@ -1,6 +1,7 @@
 import golly as g
 from itertools import chain, product
 import re
+from time import clock
 
 def find_all_subpatterns(haystack, needle):
   if not haystack or not needle:
@@ -52,7 +53,7 @@ GLIDER = g.parse('3o$2bo$bo!')
 
 MAX_GENERATIONS = 400
 MAX_POPULATION = 50
-MAX_WEIGHT = 3
+MAX_WEIGHT = 2
 MAX_GLIDERS = 10
 LANES = range(-38, 38, 2)
 
@@ -118,6 +119,7 @@ def subtract(cells, sub):
   return list(chain(*(set(zip(cells[::2], cells[1::2])) ^ set(zip(sub[::2], sub[1::2])))))
 
 g.setrule('Life')
+g.setalgo('QuickLife')
 g.new('')
 #i = 0
 #cells = [c for name, c, _ in TARGETS if name == 'hfarm0'][0]
@@ -165,16 +167,33 @@ def display_solution(start, lanes, weight, debug, emitted):
   #  pass
   g.show('')
   g.setrule('Life')
+  g.setalgo('QuickLife')
   g.new('')
 
-queue = []
+queue = { 0: [] }
 for name, cells, _ in TARGETS:
   period = get_pattern_period(cells)
-  queue.append( ((name, 0, 0), [], cells, period, 0, False, []) )
-  queue.append( ((name, 1, 0), [], g.transform(cells, 1, 0), period, 0, False, []) )
+  queue[0].append( ((name, 0, 0), [], cells, period, 0, False, []) )
+  queue[0].append( ((name, 1, 0), [], g.transform(cells, 1, 0), period, 0, False, []) )
 
-while len(queue):
-  start, lanes, last, period, weight, emitted, debug = queue.pop(0)
+checked = 0
+prev_time = clock()
+while True:
+  node = None
+  for i in range(0, MAX_WEIGHT + 1):
+    if queue.get(i):
+      node = queue[i].pop(0)
+      break
+  if node is None:
+    break
+
+  start, lanes, last, period, weight, emitted, debug = node
+
+  if checked % 100 == 0:
+    delta_time = clock() - prev_time
+    g.show('queue: ' + str(sum(len(q) for q in queue.values())) + ' speed: ' + (str(checked / delta_time) if delta_time else 'n/a'))
+
+  checked += 1
 
   if emitted:
     if emitted > max([lane for lane, _ in lanes])+6:
@@ -198,6 +217,9 @@ while len(queue):
         break
     if found:
       continue
+
+  if not last:
+    continue
 
   if len(lanes) >= MAX_GLIDERS:
     continue
@@ -243,9 +265,6 @@ while len(queue):
           glider_copy = g.transform(glider_copy, 0, 0, 0, -1, 1, 0)
         new_cells = g.evolve(new_cells, 1)
 
-      if not new_cells:
-        continue
-
       '''
       if emitted_gliders[0] + emitted_gliders[2] > 0:
         continue
@@ -282,8 +301,6 @@ while len(queue):
 
       new_lanes = list(lanes)
       new_lanes.append(lane)
-      queue.append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted, new_debug) )
-
-  queue.sort(lambda a, b: cmp(a[4], b[4]))
+      queue.setdefault(new_weight, []).append( (start, new_lanes, new_cells, new_period, new_weight, new_emitted, new_debug) )
 
 outf.close
