@@ -1,5 +1,5 @@
 #CXRLE Pos=-476,0
-x = 489, y = 503, rule = Life
+x = 489, y = 503, rule = B3/S23
 482bo$481bobo$481bobo$482bo2$477b2o7b2o$476bo2bo5bo2bo$477b2o7b2o2$
 482bo$481bobo$481bobo$482bo87$391bo$391b2o$390bobo98$281bo$281b2o$280b
 obo98$185bo$185b2o$184bobo98$93bo$93b2o$92bobo99$3o$2bo$bo!

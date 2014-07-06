@@ -1,4 +1,3 @@
-#CXRLE Pos=-284,0
-x = 294, y = 302, rule = Life
+x = 294, y = 302, rule = B3/S23
 289bo$289bo$289bo2$285b3o3b3o2$289bo$289bo$289bo92$184b3o$186bo$185bo
 98$92b3o$94bo$93bo97$bo$b2o$obo!
